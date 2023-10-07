@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+openai
+llama-cpp-python
+deepl
