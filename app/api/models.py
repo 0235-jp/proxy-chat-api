@@ -11,11 +11,7 @@ async def get_all_models(request: Request):
     return list(fireworksModels + openaiModels)
 
 async def get_models(api_base, api_key):
-    list = openai.Model.list(api_base=api_base, api_key=api_key).data
-    models = []
-    for data in list:
-        models.append(data.id)
-    return models
+    return openai.Model.list(api_base=api_base, api_key=api_key).data
 
 async def get_fireworks_models():
     return await get_models("https://api.fireworks.ai/inference/v1/", FIREWORKS_API_KEY)
