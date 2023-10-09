@@ -10,8 +10,30 @@ def create(model, body: json):
         "model": model,
         "messages": body["messages"],
     }
+    if "frequency_penalty" in body:
+        create_kwargs["frequency_penalty"] = body["frequency_penalty"]
+    if "function_call" in body:
+        create_kwargs["function_call"] = body["function_call"]
+    if "functions" in body:
+        create_kwargs["functions"] = body["functions"]
+    if "logit_bias" in body:
+        create_kwargs["logit_bias"] = body["logit_bias"]
+    if "max_tokens" in body:
+        create_kwargs["max_tokens"] = body["max_tokens"]
+    if "n" in body:
+        create_kwargs["n"] = body["n"]
+    if "presence_penalty" in body:
+        create_kwargs["presence_penalty"] = body["presence_penalty"]
+    if "stop" in body:
+        create_kwargs["stop"] = body["stop"]
     if "stream" in body:
         create_kwargs["stream"] = body["stream"]
+    if "temperature" in body:
+        create_kwargs["temperature"] = body["temperature"]
+    if "top_p" in body:
+        create_kwargs["top_p"] = body["top_p"]
+    if "user" in body:
+        create_kwargs["user"] = body["user"]
     return openai.ChatCompletion.create(**create_kwargs)
 
 def chat_stream_generator(model, body: json) -> Iterator[bytes]:
