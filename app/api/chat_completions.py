@@ -12,8 +12,10 @@ def create(model, body: json):
     }
     if "frequency_penalty" in body:
         create_kwargs["frequency_penalty"] = body["frequency_penalty"]
+    # Not compatible with anything other than ChatGPT
     if "function_call" in body:
         create_kwargs["function_call"] = body["function_call"]
+    # Not compatible with anything other than ChatGPT
     if "functions" in body:
         create_kwargs["functions"] = body["functions"]
     if "logit_bias" in body:
