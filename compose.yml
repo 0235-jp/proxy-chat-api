@@ -3,7 +3,7 @@ networks:
     external: true
 
 services:
-    chat-api:
+    proxy-chat-api:
       env_file:
         - .env
       container_name: "proxy-chat-api"
@@ -12,10 +12,10 @@ services:
       build: .
       labels:
         traefik.enable: "true"
-        traefik.http.routers.chat-api.rule: Host(`${API_HOST}`)
-        traefik.http.routers.chat-api.tls: "true"
-        traefik.http.routers.chat-api.entrypoints: https
-        traefik.http.routers.chat-api.tls.certresolver: le
+        traefik.http.routers.proxy-chat-api.rule: Host(`${API_HOST}`)
+        traefik.http.routers.proxy-chat-api.tls: "true"
+        traefik.http.routers.proxy-chat-api.entrypoints: https
+        traefik.http.routers.proxy-chat-api.tls.certresolver: le
       expose:
         - "8080"
       ports:
