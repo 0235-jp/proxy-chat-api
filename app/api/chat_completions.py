@@ -2,22 +2,17 @@ import json
 from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
 from config import SECRET_TOKEN, OPEN_API_KEY, FIREWORKS_API_KEY
-import openai
+from openai import AsyncOpenAI
+
 from typing import Iterator
 
-def create(model, body: json):
+async def create(client ,model, body: json):
     create_kwargs = {
         "model": model,
         "messages": body["messages"],
     }
     if "frequency_penalty" in body:
         create_kwargs["frequency_penalty"] = body["frequency_penalty"]
-    # Not compatible with anything other than ChatGPT
-    if "function_call" in body:
-        create_kwargs["function_call"] = body["function_call"]
-    # Not compatible with anything other than ChatGPT
-    if "functions" in body:
-        create_kwargs["functions"] = body["functions"]
     if "logit_bias" in body:
         create_kwargs["logit_bias"] = body["logit_bias"]
     if "max_tokens" in body:
@@ -26,6 +21,10 @@ def create(model, body: json):
         create_kwargs["n"] = body["n"]
     if "presence_penalty" in body:
         create_kwargs["presence_penalty"] = body["presence_penalty"]
+    if "response_format" in body:
+        create_kwargs["response_format"] = body["response_format"]
+    if "seed" in body:
+        create_kwargs["seed"] = body["seed"]
     if "stop" in body:
         create_kwargs["stop"] = body["stop"]
     if "stream" in body:
@@ -34,12 +33,22 @@ def create(model, body: json):
         create_kwargs["temperature"] = body["temperature"]
     if "top_p" in body:
         create_kwargs["top_p"] = body["top_p"]
+    if "tools" in body:
+        create_kwargs["tools"] = body["tools"]
+    if "tool_choice" in body:
+        create_kwargs["tool_choice"] = body["tool_choice"]
     if "user" in body:
         create_kwargs["user"] = body["user"]
-    return openai.ChatCompletion.create(**create_kwargs)
+    ## Deprecated
+    if "function_call" in body:
+        create_kwargs["function_call"] = body["function_call"]
+    ## Deprecated
+    if "functions" in body:
+        create_kwargs["functions"] = body["functions"]
+    return await client.chat.completions.create(**create_kwargs)
 
-def chat_stream_generator(model, body: json) -> Iterator[bytes]:
-   response = create(model, body)
+async def chat_stream_generator(model, body: json) -> Iterator[bytes]:
+   response = await create(model, body)
    for chunk in response:
        formatted_chunk = f"data: {json.dumps(chunk)}\n\n"
        yield formatted_chunk
@@ -52,15 +61,9 @@ async def get_chat_completions(request: Request):
     body = json.loads(body_raw.decode("utf-8"))
     model = body["model"]
     if model.startswith("accounts/fireworks/models"):
-      openai.api_base = "https://api.fireworks.ai/inference/v1/"
-      openai.api_key = FIREWORKS_API_KEY
-    # elif model == "gpt-4":
-    #   openai.api_base = "https://api.fireworks.ai/inference/v1/"
-    #   openai.api_key = FIREWORKS_API_KEY
-    #   model = "accounts/fireworks/models/llama-v2-34b-code-instruct"
+      client = AsyncOpenAI(base_url = "https://api.fireworks.ai/inference/v1/", api_key = FIREWORKS_API_KEY)
     else:
-      openai.api_base = "https://api.openai.com/v1/"
-      openai.api_key = OPEN_API_KEY
+      client = AsyncOpenAI(base_url = "https://api.openai.com/v1/", api_key = OPEN_API_KEY)
     if body.get("stream", False):
-        return StreamingResponse(chat_stream_generator(model, body), media_type="text/event-stream")
-    return create(model, body)
+        return StreamingResponse(await chat_stream_generator(client, model, body), media_type="text/event-stream")
+    return await create(client, model, body)

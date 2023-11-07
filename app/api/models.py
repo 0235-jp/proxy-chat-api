@@ -1,6 +1,6 @@
 from fastapi import HTTPException, Request
 from config import SECRET_TOKEN, OPEN_API_KEY, FIREWORKS_API_KEY
-import openai
+from openai import AsyncOpenAI
 
 async def get_all_models(request: Request):
     signature = request.headers['Authorization']
@@ -10,8 +10,9 @@ async def get_all_models(request: Request):
     openaiModels = await get_openai_models()
     return {'data': list(fireworksModels.data + openaiModels.data), "object": "list"}
 
-async def get_models(api_base, api_key):
-    return openai.Model.list(api_base=api_base, api_key=api_key)
+async def get_models(base_url, api_key):
+    client = AsyncOpenAI(base_url=base_url, api_key=api_key)
+    return await client.models.list()
 
 async def get_fireworks_models():
     return await get_models("https://api.fireworks.ai/inference/v1/", FIREWORKS_API_KEY)
