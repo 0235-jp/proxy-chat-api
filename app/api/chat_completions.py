@@ -47,11 +47,10 @@ async def create(client ,model, body: json):
         create_kwargs["functions"] = body["functions"]
     return await client.chat.completions.create(**create_kwargs)
 
-async def chat_stream_generator(model, body: json) -> Iterator[bytes]:
-   response = await create(model, body)
-   for chunk in response:
-       formatted_chunk = f"data: {json.dumps(chunk)}\n\n"
-       yield formatted_chunk
+async def chat_stream_generator(client, model, body: json) -> Iterator[bytes]:
+   response = await create(client, model, body)
+   async for chunk in response:
+       yield json.dumps(chunk.dict(), ensure_ascii=False).encode('utf-8')
 
 async def get_chat_completions(request: Request):
     signature = request.headers['Authorization']
@@ -64,6 +63,7 @@ async def get_chat_completions(request: Request):
       client = AsyncOpenAI(base_url = "https://api.fireworks.ai/inference/v1/", api_key = FIREWORKS_API_KEY)
     else:
       client = AsyncOpenAI(base_url = "https://api.openai.com/v1/", api_key = OPEN_API_KEY)
+      client.chat.completions.create
     if body.get("stream", False):
-        return StreamingResponse(await chat_stream_generator(client, model, body), media_type="text/event-stream")
+        return StreamingResponse(chat_stream_generator(client, model, body), media_type="text/event-stream")
     return await create(client, model, body)
