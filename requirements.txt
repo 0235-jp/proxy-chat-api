@@ -1,4 +1,4 @@
 fastapi
 uvicorn
 openai
-llama-cpp-python
+google-generativeai

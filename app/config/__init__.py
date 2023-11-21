@@ -1,6 +1,7 @@
-from .config import SECRET_TOKEN, OPEN_API_KEY, FIREWORKS_API_KEY
+from .config import SECRET_TOKEN, OPEN_API_KEY, FIREWORKS_API_KEY, PALM_KEY
 __all__ = [
     "SECRET_TOKEN",
     "OPEN_API_KEY",
     "FIREWORKS_API_KEY",
+    "PALM_KEY",
 ]
