@@ -1,10 +1,13 @@
 import json
+import google.generativeai as palm
 from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
-from config import SECRET_TOKEN, OPEN_API_KEY, FIREWORKS_API_KEY
+from config import SECRET_TOKEN, OPEN_API_KEY, FIREWORKS_API_KEY, PALM_KEY
 from openai import AsyncOpenAI
 
 from typing import Iterator
+
+palm.configure(api_key=PALM_KEY)
 
 async def create(client ,model, body: json):
     create_kwargs = {
@@ -47,6 +50,48 @@ async def create(client ,model, body: json):
         create_kwargs["functions"] = body["functions"]
     return await client.chat.completions.create(**create_kwargs)
 
+async def createGoogle(model, body: json):
+    requestMessages = body["messages"]
+    messages = []
+    context = ""
+    for message in requestMessages:
+        auther = ""
+        if message["role"] == 'system':
+            context = message["content"]
+            continue
+        elif message["role"] == 'user':
+            auther = "1"
+        elif message["role"] == 'assistant':
+            auther = "2"
+        messages.append({'author': auther, 'content': message["content"]})
+    palmResponce = palm.chat(model=model,
+                             messages=messages,
+                             context=context
+                            #  temperatur=body["temperature"],
+                            #  top_p=body["top_p"],
+                             )
+    print(palmResponce.messages)
+    return {
+        "id": "chatcmpl-9999",
+        "object": "chat.completion",
+        "created": 0,
+        "model": model,
+        "system_fingerprint": "fp_9999999",
+        "choices": [{
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": palmResponce.last,
+            },
+            "finish_reason": "stop"
+        }],
+        "usage": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0
+         }
+}
+
 async def chat_stream_generator(client, model, body: json) -> Iterator[bytes]:
    response = await create(client, model, body)
    async for chunk in response:
@@ -59,11 +104,16 @@ async def get_chat_completions(request: Request):
     body_raw = await request.body()
     body = json.loads(body_raw.decode("utf-8"))
     model = body["model"]
-    if model.startswith("accounts/fireworks/models"):
+    if model.startswith("fireworks/"):
+      model = model.replace("fireworks/", "accounts/fireworks/models")
       client = AsyncOpenAI(base_url = "https://api.fireworks.ai/inference/v1/", api_key = FIREWORKS_API_KEY)
-    else:
+    elif model.startswith("openai/"):
+      model = model.replace("openai/", "")
       client = AsyncOpenAI(base_url = "https://api.openai.com/v1/", api_key = OPEN_API_KEY)
       client.chat.completions.create
+    elif model.startswith("google/"):
+      model = model.replace("google/", "")
+      return await createGoogle(model, body)
     if body.get("stream", False):
         return StreamingResponse(chat_stream_generator(client, model, body), media_type="text/event-stream")
     return await create(client, model, body)
