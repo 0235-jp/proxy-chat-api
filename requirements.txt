@@ -1,4 +1,6 @@
 fastapi
 uvicorn
-openai
-google-generativeai
+pymemgpt
+line-bot-sdk
+requests
+deepl

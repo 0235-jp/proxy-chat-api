@@ -9,6 +9,7 @@ services:
       container_name: "proxy-chat-api"
       volumes:
         - ./app:/app
+        - ./memgpt:/root/.memgpt
       build: .
       labels:
         traefik.enable: "true"
